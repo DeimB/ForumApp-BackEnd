@@ -16,13 +16,13 @@ const authUser = (req, res, next) => {
       });
     }
 
-    req.body = req.body || {};
-    req.body.userId = decoded.userId;
+    // req.body = req.body || {};
+    // req.body.userId = decoded.userId;
 
-    // Attach decoded data to req.user instead of req.body
-    // req.user = {
-    //   userId: decoded.userId,
-    // };
+    //Attach decoded data to req.user instead of req.body
+    req.user = {
+      userId: decoded.userId,
+    };
 
     next();
   });

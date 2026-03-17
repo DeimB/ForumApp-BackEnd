@@ -13,7 +13,7 @@ router.get("/questions", getAllQuestions);
 
 router.get("/questions/:id", getQuestionById);
 
-router.post("/question", auth, createQuestion);
+router.post("/questions", auth, createQuestion);
 
 router.delete("/questions/:id", auth, deleteQuestionById);
 
