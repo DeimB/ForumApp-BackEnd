@@ -10,4 +10,10 @@ const schema = new mongoose.Schema({
   dislikes: { type: [String], default: [] },
 });
 
+// Index to quickly find answers by question
+schema.index({ question_id: 1 });
+
+// Index for sorting by date
+schema.index({ date: -1 });
+
 export default mongoose.model("Answer", schema);

@@ -7,4 +7,10 @@ const schema = mongoose.Schema({
   userId: { type: String, required: true },
 });
 
+// Index for faster searches by question id
+schema.index({ id: 1 });
+
+// Index for sorting by date
+schema.index({ date: -1 });
+
 export default mongoose.model("Question", schema);

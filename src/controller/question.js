@@ -2,40 +2,86 @@ import QuestionModel from "../models/question.js";
 import AnswerModel from "../models/answer.js";
 import { v4 as uuid } from "uuid";
 
+// export const getAllQuestions = async (req, res) => {
+//   try {
+//     const questions = await QuestionModel.find().sort({ date: -1 });
+//     return res.status(200).json({ questions });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error fetching questions", error });
+//   }
+// };
+
 export const getAllQuestions = async (req, res) => {
   try {
-    const questions = await QuestionModel.find().sort({ date: -1 });
-    return res.status(200).json({ questions });
+    // Read query parameter from URL
+    // Example: /questions?filter=answered
+    const { filter } = req.query;
+
+    // Aggregation pipeline = a sequence of operations performed by MongoDB
+    const pipeline = [
+      {
+        // Join questions collection with answers collection
+        // Similar to SQL JOIN
+        $lookup: {
+          from: "answers", // MongoDB collection name
+          localField: "id", // field from QuestionModel
+          foreignField: "question_id", // field from AnswerModel
+          as: "answers", // name of resulting array field
+        },
+      },
+      {
+        // Add a new field called answersCount
+        // It stores the number of answers for each question
+        $addFields: {
+          answersCount: { $size: "$answers" },
+        },
+      },
+    ];
+
+    // If user requested answered questions
+    if (filter === "answered") {
+      pipeline.push({
+        // Only keep questions that have at least 1 answer
+        $match: { answersCount: { $gt: 0 } },
+      });
+    }
+
+    // If user requested unanswered questions
+    if (filter === "unanswered") {
+      pipeline.push({
+        // Only keep questions that have 0 answers
+        $match: { answersCount: 0 },
+      });
+    }
+
+    // Remove the answers array from the final result
+    // because we only need the count
+    pipeline.push({
+      $project: {
+        answers: 0,
+      },
+    });
+
+    // Sort questions by date (newest first)
+    pipeline.push({
+      $sort: { date: -1 },
+    });
+
+    // Execute aggregation pipeline in MongoDB
+    const questions = await QuestionModel.aggregate(pipeline);
+
+    // Send response to client
+    res.status(200).json({ questions });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching questions", error });
+    res.status(500).json({
+      message: "Error fetching questions",
+      error: error.message,
+    });
   }
 };
 
 export const createQuestion = async (req, res) => {
   try {
-    // const data = req.body || {};
-
-    // if (!data.userId) {
-    //   return res.status(401).json({ message: "Bad auth" });
-    // }
-
-    // const user = await UserModel.findOne({ id: data.userId });
-
-    // if (!user) {
-    //   return res.status(404).json({ message: "User not found" });
-    // }
-
-    // if (!data.question_text) {
-    //   return res.status(400).json({ message: "Question text is required" });
-    // }
-
-    // const question = await QuestionModel.create({
-    //   id: uuid(),
-    //   question_text: String(data.question_text).trim(),
-    //   date: new Date(),
-    //   userId: data.userId,
-    // });
-
     const { question_text } = req.body;
     const userId = req.user.userId;
 
